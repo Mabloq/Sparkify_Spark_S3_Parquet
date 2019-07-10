@@ -29,7 +29,7 @@ def create_spark_session():
     return sc
 
 
-def process_song_data(sc, input_data):
+def process_song_data(sc, input_data, output_staging, output_songs):
     """
       Reads song data from s3 saves raw data to staging table in parquet format and saves process data to
       songs and artists tables
@@ -52,7 +52,7 @@ def process_song_data(sc, input_data):
         .partitionBy('year_part','year', 'artist_id')\
         .format('parquet')\
         .mode('overwrite')\
-        .save('local-data/parquet/staging_songs/')
+        .save(output_staging)
 
     # extract columns to create songs table
     # write songs to parquet songs_tablex
@@ -60,7 +60,7 @@ def process_song_data(sc, input_data):
     song_table.write.mode('overwrite')\
         .partitionBy('year_part', 'year', 'artist_id')\
         .format('parquet').mode('overwrite')\
-        .save('local-data/parquet/songs/')
+        .save(output_songs)
 
     # extract columns to create artists table
     artists_table = songs.selectExpr('artist_id', 'artist_name as name', 'artist_location as location', 'artist_latitude as latitude','artist_longitude as longitude')
@@ -137,6 +137,6 @@ def process_log_data(spark, input_data):
 
 if __name__ == "__main__":
     spark = create_spark_session()
-    process_song_data(spark, 'local-data/songs/*/*.json')
+    process_song_data(spark, 'local-data/songs/*/*.json','local-data/parquet/staging_songs', 'local_data/parquet/songs')
     process_log_data(spark, 'local-data/logs/*.json')
     spark.stop()
